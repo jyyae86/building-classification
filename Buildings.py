@@ -2,6 +2,8 @@ import os, shutil
 import tensorflow as tf
 
 from keras.applications import VGG19
+from keras.layers import Dense, Input, Flatten, Dropout
+from keras.layers import Activation
 
 from keras.optimizers import RMSprop, SGD
 from keras import models
@@ -29,8 +31,8 @@ K.backend.clear_session()
 # print(img_tensor.shape)
 # plt.imshow(img_tensor[0])
 # plt.show()
-train_dir = 'D:\\Amaury\\Ian\\Data\\train'
-validation_dir = 'D:\\Amaury\\Ian\\Data\\validation'
+train_dir = 'D:\\Amaury\\Ian\\Data\\train\\Temp Wood'
+validation_dir = 'D:\\Amaury\\Ian\\Data\\validation\\Temp Wood'
 test_dir = 'D:\\Amaury\\Ian\\Data\\test'
 
 original_w1_dir = 'D:\\Amaury\\Ian\\training_data\\W1'  #600 images - 300 train, 150 test, 150 validation
@@ -243,7 +245,11 @@ base_dir = 'D:\\Amaury\\Ian\\training_data'
 # data = []
 # labels = []
 
-train_datagen = ImageDataGenerator(rescale=1./255)
+train_datagen = ImageDataGenerator(rescale=1./255,
+        width_shift_range=0.2,
+        height_shift_range=0.2,
+        zoom_range=0.5,
+        horizontal_flip=True)
 test_datagen = ImageDataGenerator(rescale=1./255)
 
 train_gen = train_datagen.flow_from_directory(
@@ -376,16 +382,22 @@ with tf.device('/gpu:0'):
 
     model = models.Sequential()
     model.add(conv_base)
-    model.add(layers.Flatten())
-    model.add(layers.Dense(4096,activation='relu'))
-    # model.add(Dropout(0.1, name='dropout1'))
-    model.add(layers.Dense(4096,activation='relu'))
-    model.add(layers.Dense(512,activation='relu'))
-    model.add(layers.Dense(10, activation='sigmoid'))
-
+    model.add(Flatten(name='flatten_1'))
+    model.add(Dense(4096,
+                    name='fc_1'))  # , kernel_regularizer=regularizers.l2(0.01), activity_regularizer=regularizers.l1(0.01)
+    model.add(Activation('relu', name='fc_actv_1'))
+    model.add(Dropout(0.33, name='fc_dropout_1'))
+    model.add(Dense(4096, name='fc_2'))
+    model.add(Activation('relu', name='fc_actv_2'))
+    model.add(Dropout(0.33, name='fc_dropout_2'))
+    model.add(Dense(1000, name='fc_6'))
+    model.add(Activation('relu', name='fc_actv_6'))
+    model.add(Dropout(0.33, name='fc_dropout_6'))
+    model.add(Dense(2, name='fc_7'))
+    model.add(Activation('softmax', name='fc_actv_7'))
     print(model.summary())
 
-    sgd = SGD(lr=0.0000001, decay=1e-6, momentum=0.8, nesterov=True)
+    sgd = SGD(lr=0.001, decay=1e-6, momentum=0.5, nesterov=True)
 
     model.compile(optimizer=sgd,
     loss='categorical_crossentropy',
@@ -406,7 +418,7 @@ with tf.device('/gpu:0'):
 
 # train_gen = datagen.flow(data, labels, batch_size=16)
 
-mout = model.fit_generator(generator=train_gen, steps_per_epoch=100, epochs=5,
+mout = model.fit_generator(generator=train_gen, steps_per_epoch=100, epochs=30,
                            verbose=1, validation_data=validation_gen, validation_steps = 50)
 
 
