@@ -19,6 +19,7 @@ from scipy import misc
 import matplotlib.pyplot as plt
 import numpy as np
 import keras as K
+from keras.utils import to_categorical
 
 K.backend.clear_session()
 #
@@ -242,50 +243,22 @@ base_dir = 'D:\\Amaury\\Ian\\training_data'
 
 
 
-# data = []
-# labels = []
+data = []
+labels = []
 
-train_datagen = ImageDataGenerator(rescale=1./255,
-        width_shift_range=0.2,
-        height_shift_range=0.2,
-        zoom_range=0.5,
-        horizontal_flip=True)
-test_datagen = ImageDataGenerator(rescale=1./255)
+for filename in os.listdir(original_w1_dir):
+    img = misc.imread(os.path.join(original_w1_dir, filename))
+    img = misc.imresize(img, (220,220))
+    img = preprocess_input(x=np.expand_dims(img.astype(float), axis=0))
+    data.append(img)
+    labels.append(0)
 
-train_gen = train_datagen.flow_from_directory(
-    train_dir,
-    target_size=(220,220),
-    batch_size=(16),
-    class_mode='categorical'
-)
-
-validation_gen = test_datagen.flow_from_directory(
-    validation_dir,
-    target_size=(220,220),
-    batch_size=(16),
-    class_mode='categorical'
-)
-
-for data_batch, labels_batch in train_gen:
-    print('data batch shape:', data_batch.shape)
-    print('labels batch shape:', labels_batch.shape)
-    break
-
-
-#
-# for filename in os.listdir(original_w1_dir):
-#     img = misc.imread(os.path.join(original_w1_dir, filename))
-#     img = misc.imresize(img, (220,220))
-#     img = preprocess_input(x=np.expand_dims(img.astype(float), axis=0))
-#     data.append(img)
-#     labels.append([1,0,0,0,0,0,0,0,0,0])
-#
-# for filename in os.listdir(original_w2_dir):
-#     img = misc.imread(os.path.join(original_w2_dir, filename))
-#     img = misc.imresize(img, (220,220))
-#     img = preprocess_input(x=np.expand_dims(img.astype(float), axis=0))
-#     data.append(img)
-#     labels.append([0,1,0,0,0,0,0,0,0,0])
+for filename in os.listdir(original_w2_dir):
+    img = misc.imread(os.path.join(original_w2_dir, filename))
+    img = misc.imresize(img, (220,220))
+    img = preprocess_input(x=np.expand_dims(img.astype(float), axis=0))
+    data.append(img)
+    labels.append(1)
 #
 # for filename in os.listdir(original_c1h_dir):
 #     img = misc.imread(os.path.join(original_c1h_dir, filename))
@@ -343,36 +316,36 @@ for data_batch, labels_batch in train_gen:
 #     data.append(img)
 #     labels.append([0,0,0,0,0,0,0,0,0,1])
 #
-# def shuffle_in_unison(a, b):
-#     assert len(a) == len(b)
-#     shuffled_a = np.empty(a.shape, dtype=a.dtype)
-#     shuffled_b = np.empty(b.shape, dtype=b.dtype)
-#     permutation = np.random.permutation(len(a))
-#     for old_index, new_index in enumerate(permutation):
-#         shuffled_a[new_index] = a[old_index]
-#         shuffled_b[new_index] = b[old_index]
-#     return shuffled_a, shuffled_b
+def shuffle_in_unison(a, b):
+    assert len(a) == len(b)
+    shuffled_a = np.empty(a.shape, dtype=a.dtype)
+    shuffled_b = np.empty(b.shape, dtype=b.dtype)
+    permutation = np.random.permutation(len(a))
+    for old_index, new_index in enumerate(permutation):
+        shuffled_a[new_index] = a[old_index]
+        shuffled_b[new_index] = b[old_index]
+    return shuffled_a, shuffled_b
 
 #
-#
-# data = np.array(data)
-# labels = np.array(labels)
-# data = np.squeeze(data,axis=1)
 # data, labels = shuffle_in_unison(data,labels)
-# valData = data[2000:]
-# trainingData = data[:2000]
-#
-# valLabels =  labels[2000:]
-# trainingLabels = labels[:2000]
-# batch_size = 16
-#
-# plt.imshow(data[0,:])
-# plt.show()
-#
-# print(trainingData.shape)
-# print(trainingLabels.shape)
-# print(valData.shape)
-# print(valLabels.shape)
+data = np.squeeze(data,axis=1)
+data = np.array(data,  dtype=np.uint8)
+data = data.astype('float32')
+data = data/255
+labels = to_categorical(labels)
+
+trainData = data[:800]
+valData = data[800:]
+trainLabels = labels[:800]
+valLabels = labels[800:]
+
+
+
+
+print(trainData.shape)
+print(trainLabels.shape)
+print(valData.shape)
+print(valLabels.shape)
 
 with tf.device('/gpu:0'):
 
@@ -397,29 +370,29 @@ with tf.device('/gpu:0'):
     model.add(Activation('softmax', name='fc_actv_7'))
     print(model.summary())
 
-    sgd = SGD(lr=0.001, decay=1e-6, momentum=0.5, nesterov=True)
+    sgd = SGD(lr=0.001, decay=1e-6, momentum=0.4, nesterov=True)
 
     model.compile(optimizer=sgd,
     loss='categorical_crossentropy',
     metrics=['accuracy'])
 
     print("trainable",model.trainable_weights)
-#
-# datagen = ImageDataGenerator(
-#     rotation_range=10,
-#     width_shift_range=0.1,
-#     height_shift_range=.1,
-#     shear_range=.1,
-#     zoom_range=0.1,
-#     horizontal_flip=True,
-#     fill_mode='nearest'
-#
-# )
 
-# train_gen = datagen.flow(data, labels, batch_size=16)
+    datagen = ImageDataGenerator(
+        rotation_range=2,
+        width_shift_range=0.25,
+        height_shift_range=.05,
+        shear_range=.2,
+        zoom_range=0.8,
+        horizontal_flip=True,
+        fill_mode='nearest'
+    )
 
-mout = model.fit_generator(generator=train_gen, steps_per_epoch=100, epochs=30,
-                           verbose=1, validation_data=validation_gen, validation_steps = 50)
+    train_gen = datagen.flow(trainData, trainLabels, batch_size=16)
+
+    mout = model.fit_generator(generator=train_gen, steps_per_epoch=trainData.shape[0] // 16, epochs=30,
+                               verbose=1, validation_data=(valData, valLabels))
+
 
 
 
