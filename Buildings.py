@@ -19,9 +19,12 @@ from scipy import misc
 import matplotlib.pyplot as plt
 import numpy as np
 import keras as K
+import dataset as dataset
 from keras.utils import to_categorical
 
 K.backend.clear_session()
+gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.5)
+sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
 #
 # img_path = 'D:\\Amaury\\Ian\\training_data\\W1\\174.jpg'
 # img = image.load_img(img_path, target_size=(150, 150))
@@ -326,26 +329,22 @@ def shuffle_in_unison(a, b):
         shuffled_b[new_index] = b[old_index]
     return shuffled_a, shuffled_b
 
-#
-# data, labels = shuffle_in_unison(data,labels)
-data = np.squeeze(data,axis=1)
-data = np.array(data,  dtype=np.uint8)
-data = data.astype('float32')
-data = data/255
-labels = to_categorical(labels)
-
-trainData = data[:800]
-valData = data[800:]
-trainLabels = labels[:800]
-valLabels = labels[800:]
+trainData, trainLabels, trainID, trainCLS = dataset.load_train("D:\\Amaury\\Ian\\Data\\train\\Temp Wood", 220, ["w1", "w2"])
+valData, valLabels, valID, valCLS = dataset.load_train("D:\\Amaury\\Ian\\Data\\validation\\Temp Wood", 220, ["w1", "w2"])
 
 
+im = plt.imshow(valData[2])
+print("2", valLabels[2])
+plt.show()
 
 
+print("start")
 print(trainData.shape)
 print(trainLabels.shape)
 print(valData.shape)
 print(valLabels.shape)
+print(trainLabels[0])
+print(valLabels[0])
 
 with tf.device('/gpu:0'):
 
@@ -390,7 +389,7 @@ with tf.device('/gpu:0'):
 
     train_gen = datagen.flow(trainData, trainLabels, batch_size=16)
 
-    mout = model.fit_generator(generator=train_gen, steps_per_epoch=trainData.shape[0] // 16, epochs=30,
+    mout = model.fit_generator(generator=train_gen, steps_per_epoch=trainData.shape[0] // 16, epochs=100,
                                verbose=1, validation_data=(valData, valLabels))
 
 
