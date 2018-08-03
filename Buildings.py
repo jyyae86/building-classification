@@ -319,6 +319,8 @@ for filename in os.listdir(original_w2_dir):
 #     data.append(img)
 #     labels.append([0,0,0,0,0,0,0,0,0,1])
 #
+
+
 def shuffle_in_unison(a, b):
     assert len(a) == len(b)
     shuffled_a = np.empty(a.shape, dtype=a.dtype)
@@ -329,13 +331,17 @@ def shuffle_in_unison(a, b):
         shuffled_b[new_index] = b[old_index]
     return shuffled_a, shuffled_b
 
-trainData, trainLabels, trainID, trainCLS = dataset.load_train("D:\\Amaury\\Ian\\Data\\train\\Temp Wood", 220, ["w1", "w2"])
-valData, valLabels, valID, valCLS = dataset.load_train("D:\\Amaury\\Ian\\Data\\validation\\Temp Wood", 220, ["w1", "w2"])
+
+data = dataset.read_train_sets("D:\\Amaury\\Ian\\datasetTest", 220, ["w1", "w2"], validation_size=.1)
 
 
-im = plt.imshow(valData[2])
-print("2", valLabels[2])
-plt.show()
+# trainData, trainLabels, trainID, trainCLS = dataset.load_train("D:\\Amaury\\Ian\\Data\\train\\Temp Wood", 220, ["w1", "w2"])
+# valData, valLabels, valID, valCLS = dataset.load_train("D:\\Amaury\\Ian\\Data\\validation\\Temp Wood", 220, ["w1", "w2"])
+
+trainData = data.train.images
+trainLabels = data.train.labels
+valData = data.valid.images
+valLabels = data.valid.labels
 
 
 print("start")
@@ -389,7 +395,7 @@ with tf.device('/gpu:0'):
 
     train_gen = datagen.flow(trainData, trainLabels, batch_size=16)
 
-    mout = model.fit_generator(generator=train_gen, steps_per_epoch=trainData.shape[0] // 16, epochs=100,
+    mout = model.fit_generator(generator=train_gen, steps_per_epoch=trainData.shape[0] // 16, epochs=20,
                                verbose=1, validation_data=(valData, valLabels))
 
 
