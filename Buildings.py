@@ -332,7 +332,7 @@ def shuffle_in_unison(a, b):
     return shuffled_a, shuffled_b
 
 
-data = dataset.read_train_sets("D:\\Amaury\\Ian\\datasetTest", 220, ["w1", "w2"], validation_size=.1)
+data = dataset.read_train_sets("D:\\Amaury\\Ian\\datasetTest", 220, ["w1", "w2"], validation_size=.4)
 
 
 # trainData, trainLabels, trainID, trainCLS = dataset.load_train("D:\\Amaury\\Ian\\Data\\train\\Temp Wood", 220, ["w1", "w2"])
@@ -361,18 +361,26 @@ with tf.device('/gpu:0'):
     model = models.Sequential()
     model.add(conv_base)
     model.add(Flatten(name='flatten_1'))
-    model.add(Dense(4096,
-                    name='fc_1'))  # , kernel_regularizer=regularizers.l2(0.01), activity_regularizer=regularizers.l1(0.01)
-    model.add(Activation('relu', name='fc_actv_1'))
-    model.add(Dropout(0.33, name='fc_dropout_1'))
-    model.add(Dense(4096, name='fc_2'))
-    model.add(Activation('relu', name='fc_actv_2'))
-    model.add(Dropout(0.33, name='fc_dropout_2'))
-    model.add(Dense(1000, name='fc_6'))
-    model.add(Activation('relu', name='fc_actv_6'))
-    model.add(Dropout(0.33, name='fc_dropout_6'))
-    model.add(Dense(2, name='fc_7'))
-    model.add(Activation('softmax', name='fc_actv_7'))
+    model.add(Dense(4096))
+    model.add(Activation('relu'))
+    model.add(Dense(4096))
+    model.add(Activation('relu'))
+    model.add(Dense(1000))
+    model.add(Activation('relu'))
+    model.add(Dense(2))
+    model.add(Activation('softmax'))
+    # model.add(Dense(4096,
+    #                 name='fc_1'))  # , kernel_regularizer=regularizers.l2(0.01), activity_regularizer=regularizers.l1(0.01)
+    # model.add(Activation('relu', name='fc_actv_1'))
+    # model.add(Dropout(0.33, name='fc_dropout_1'))
+    # model.add(Dense(4096, name='fc_2'))
+    # model.add(Activation('relu', name='fc_actv_2'))
+    # model.add(Dropout(0.33, name='fc_dropout_2'))
+    # model.add(Dense(1000, name='fc_6'))
+    # model.add(Activation('relu', name='fc_actv_6'))
+    # model.add(Dropout(0.33, name='fc_dropout_6'))
+    # model.add(Dense(2, name='fc_7'))
+    # model.add(Activation('softmax', name='fc_actv_7'))
     print(model.summary())
 
     sgd = SGD(lr=0.001, decay=1e-6, momentum=0.4, nesterov=True)
@@ -395,7 +403,7 @@ with tf.device('/gpu:0'):
 
     train_gen = datagen.flow(trainData, trainLabels, batch_size=16)
 
-    mout = model.fit_generator(generator=train_gen, steps_per_epoch=trainData.shape[0] // 16, epochs=20,
+    mout = model.fit_generator(generator=train_gen, steps_per_epoch=trainData.shape[0] // 16, epochs=50,
                                verbose=1, validation_data=(valData, valLabels))
 
 
