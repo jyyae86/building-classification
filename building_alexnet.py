@@ -19,7 +19,7 @@ import dataset as dataset
 # initalization variables 
 batch_size = 16
 
-data = dataset.read_train_sets("/home/yanug/Downloads/training_data", 220, ["W1", "W2"], validation_size=.4)
+data = dataset.read_train_sets("/home/yanug/Downloads/training_data", 220, ["C1H "  ,"C1L"   , "C1M " ,  "C2H"  , "C2L "  , "S1L"  , "URML"  , "URMM " , "W1"  , "W2"], validation_size=.4)
 
 trainData = data.train.images
 trainLabels = data.train.labels
@@ -100,7 +100,7 @@ model.add(Dropout(0.4))
 model.add(BatchNormalization())
 
 # Output Layer
-model.add(Dense(2))
+model.add(Dense(10))
 model.add(Activation('softmax'))
 
 model.summary()
