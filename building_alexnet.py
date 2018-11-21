@@ -10,7 +10,6 @@ import matplotlib as mpl
 mpl.use('Agg')
 import matplotlib.pyplot as plt
 
-from keras.applications import VGG19
 from keras import models
 
 import os
