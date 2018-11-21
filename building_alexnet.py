@@ -18,6 +18,7 @@ import dataset as dataset
 
 # initalization variables 
 batch_size = 16
+num_of_test_samples = 600
 
 data = dataset.read_train_sets("/home/yanug/Downloads/training_data", 220, ["C1H "  ,"C1L"   , "C1M " ,  "C2H"  , "C2L "  , "S1L"  , "URML"  , "URMM " , "W1"  , "W2"], validation_size=.4)
 
@@ -154,3 +155,12 @@ plt.xlabel('Epochs')
 plt.ylabel('Accuracy')
 plt.legend()
 plt.savefig("classifier-accuracy.png")
+
+#Confusion Matrix and Classification Report
+Y_pred = model.predict_generator((valData, valLabels), num_of_test_samples // batch_size+1)
+y_pred = np.argmax(Y_pred, axis=1)
+print('Confusion Matrix')
+print(confusion_matrix((valData, valLabels).classes, y_pred))
+print('Classification Report')
+target_names = ["C1H "  ,"C1L"   , "C1M " ,  "C2H"  , "C2L "  , "S1L"  , "URML"  , "URMM " , "W1"  , "W2"]
+print(classification_report((valData, valLabels).classes, y_pred, target_names=target_names))
