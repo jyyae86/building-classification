@@ -15,6 +15,10 @@ from keras import models
 import os
 import dataset as dataset
 
+import numpy as np
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import classification_report
+
 # initalization variables 
 batch_size = 16
 num_of_test_samples = 600
@@ -121,16 +125,16 @@ datagen = ImageDataGenerator(
         fill_mode='nearest'
     )
 
-
-# train our model 
+# train the model 
 train_generator = datagen.flow(trainData, trainLabels, batch_size=batch_size)
 
+# validate the model 
+validation_generator = datagen.flow(valData, valLabels, batch_size=batch_size)
+
  
-mout = model.fit_generator(generator=train_generator, steps_per_epoch=trainData.shape[0] // 16, epochs=50,
+mout = model.fit_generator(generator=train_generator, steps_per_epoch=trainData.shape[0] // 16, epochs=2,
                                verbose=1, validation_data=(valData, valLabels))
 
-
-#print(mout.history.keys())
 
 loss = mout.history['loss']
 val_loss = mout.history['val_loss']
@@ -156,10 +160,7 @@ plt.legend()
 plt.savefig("classifier-accuracy.png")
 
 #Confusion Matrix and Classification Report
-Y_pred = model.predict_generator((valData, valLabels), num_of_test_samples // batch_size+1)
+Y_pred = model.predict_generator(validation_generator, num_of_test_samples // batch_size+1)
 y_pred = np.argmax(Y_pred, axis=1)
 print('Confusion Matrix')
-print(confusion_matrix((valData, valLabels).classes, y_pred))
-print('Classification Report')
-target_names = ["C1H "  ,"C1L"   , "C1M " ,  "C2H"  , "C2L "  , "S1L"  , "URML"  , "URMM " , "W1"  , "W2"]
-print(classification_report((valData, valLabels).classes, y_pred, target_names=target_names))
+print(confusion_matrix(validation_generator.classes, y_pred))
