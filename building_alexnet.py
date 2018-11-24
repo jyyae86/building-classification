@@ -160,7 +160,6 @@ plt.legend()
 plt.savefig("classifier-accuracy.png")
 
 #Confusion Matrix and Classification Report
-Y_pred = model.predict_generator(validation_generator, (batch_size * 16) // batch_size+1)
-y_pred = np.argmax(Y_pred, axis=1)
+y_pred = model.predict_generator(validation_generator, (batch_size * 16) // batch_size+1)
 print('Confusion Matrix')
-print(confusion_matrix(validation_generator.classes, y_pred))
+print(confusion_matrix(valLabels, y_pred))
