@@ -23,7 +23,7 @@ from sklearn.metrics import classification_report
 batch_size = 16
 num_of_test_samples = 600
 
-data = dataset.read_train_sets("/home/yanug/Downloads/training_data", 220, ["C1H "  ,"C1L"   , "C1M " ,  "C2H"  , "C2L "  , "S1L"  , "URML"  , "URMM " , "W1"  , "W2"], validation_size=.4)
+data = dataset.read_train_sets("/home/yanug/Downloads/training_data", 96 , ["C1H "  ,"C1L"   , "C1M " ,  "C2H"  , "C2L "  , "S1L"  , "URML"  , "URMM " , "W1"  , "W2"], validation_size=.4)
 
 trainData = data.train.images
 trainLabels = data.train.labels
@@ -41,7 +41,7 @@ print(valLabels[0])
 model = models.Sequential()
 
 # 1st Convolutional Layer
-model.add(Conv2D(filters=96, input_shape=(220,220,3), kernel_size=(11,11),\
+model.add(Conv2D(filters=96, input_shape=(96,96,3), kernel_size=(11,11),\
     strides=(4,4), padding='valid'))
 model.add(Activation('relu'))
 # Pooling 
@@ -69,9 +69,9 @@ model.add(Activation('relu'))
 # Batch Normalisation
 model.add(BatchNormalization())
 
-# 5th Convolutional Layer
-model.add(Conv2D(filters=256, kernel_size=(3,3), strides=(1,1), padding='valid'))
-model.add(Activation('relu'))
+# 5th Convolutional Layer - for some reason this layer did not wor with image size of 96k
+#model.add(Conv2D(filters=256, kernel_size=(3,3), strides=(1,1), padding='valid'))
+#model.add(Activation('relu'))
 # Pooling
 model.add(MaxPooling2D(pool_size=(2,2), strides=(2,2), padding='valid'))
 # Batch Normalisation
@@ -132,7 +132,7 @@ train_generator = datagen.flow(trainData, trainLabels, batch_size=batch_size)
 validation_generator = datagen.flow(valData, valLabels, batch_size=batch_size)
 
  
-mout = model.fit_generator(generator=train_generator, steps_per_epoch=trainData.shape[0] // 16, epochs=2,
+mout = model.fit_generator(generator=train_generator, steps_per_epoch=trainData.shape[0] // 16, epochs=1000,
                                verbose=1, validation_data=(valData, valLabels))
 
 
@@ -158,8 +158,3 @@ plt.xlabel('Epochs')
 plt.ylabel('Accuracy')
 plt.legend()
 plt.savefig("classifier-accuracy.png")
-
-#Confusion Matrix and Classification Report
-y_pred = model.predict_generator(validation_generator, (batch_size * 16) // batch_size+1)
-print('Confusion Matrix')
-print(confusion_matrix(valData, y_pred))
