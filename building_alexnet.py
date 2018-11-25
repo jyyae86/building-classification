@@ -131,7 +131,7 @@ train_generator = datagen.flow(trainData, trainLabels, batch_size=batch_size)
 validation_generator = datagen.flow(valData, valLabels, batch_size=batch_size)
 
  
-mout = model.fit_generator(generator=train_generator, steps_per_epoch=trainData.shape[0] // 16, epochs=4,
+mout = model.fit_generator(generator=train_generator, steps_per_epoch=trainData.shape[0] // 16, epochs=1000,
                                verbose=1, validation_data=(valData, valLabels))
 
 
@@ -169,6 +169,7 @@ for x in range(0, i):
 	y = np.argmax(y, axis=1)
 	y_true.extend(y)
 
+print(len(y_true))
 print("Confusion Matrix")
 print(confusion_matrix(y_true, y_pred))
 
