@@ -21,9 +21,8 @@ from sklearn.metrics import classification_report
 
 # initalization variables 
 batch_size = 16
-num_of_test_samples = 600
 
-data = dataset.read_train_sets("/home/yanug/Downloads/training_data", 96 , ["C1H "  ,"C1L"   , "C1M " ,  "C2H"  , "C2L "  , "S1L"  , "URML"  , "URMM " , "W1"  , "W2"], validation_size=.4)
+data = dataset.read_train_sets("/home/yanug/Downloads/training_data", 96 , ["C1H "  ,"C1L"   , "C1M " ,  "C2H"  , "C2L "  , "S1L"  , "URML"  , "URMM " , "W1"  , "W2"], validation_size=.3)
 
 trainData = data.train.images
 trainLabels = data.train.labels
@@ -132,7 +131,7 @@ train_generator = datagen.flow(trainData, trainLabels, batch_size=batch_size)
 validation_generator = datagen.flow(valData, valLabels, batch_size=batch_size)
 
  
-mout = model.fit_generator(generator=train_generator, steps_per_epoch=trainData.shape[0] // 16, epochs=1000,
+mout = model.fit_generator(generator=train_generator, steps_per_epoch=trainData.shape[0] // 16, epochs=4,
                                verbose=1, validation_data=(valData, valLabels))
 
 
@@ -158,3 +157,26 @@ plt.xlabel('Epochs')
 plt.ylabel('Accuracy')
 plt.legend()
 plt.savefig("classifier-accuracy.png")
+
+Y_pred = model.predict_generator(validation_generator, 16)
+y_pred = np.argmax(Y_pred, axis=1)
+
+i = len(y_pred)/16
+
+y_true = []
+for x in range(0, i):
+	x, y = validation_generator.next()
+	y = np.argmax(y, axis=1)
+	y_true.extend(y)
+
+print("Confusion Matrix")
+print(confusion_matrix(y_true, y_pred))
+
+print('Classification Report')
+label_names = ["C1H "  ,"C1L"   , "C1M " ,  "C2H"  , "C2L "  , "S1L"  , "URML"  , "URMM " , "W1"  , "W2"]
+target_names = []
+for elem in range(1,11):
+	if elem in y_true:
+		target_names.append(label_names[elem-1])
+			
+print(classification_report(y_true, y_pred, target_names=target_names))
