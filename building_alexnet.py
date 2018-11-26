@@ -158,10 +158,10 @@ plt.ylabel('Accuracy')
 plt.legend()
 plt.savefig("classifier-accuracy.png")
 
-Y_pred = model.predict_generator(validation_generator, 16)
+Y_pred = model.predict_generator(validation_generator, batch_size)
 y_pred = np.argmax(Y_pred, axis=1)
 
-i = len(y_pred)/16
+i = len(y_pred)/batch_size
 
 y_true = []
 for x in range(0, i):
