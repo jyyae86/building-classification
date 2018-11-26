@@ -72,9 +72,9 @@ model.add(BatchNormalization())
 #model.add(Conv2D(filters=256, kernel_size=(3,3), strides=(1,1), padding='valid'))
 #model.add(Activation('relu'))
 # Pooling
-model.add(MaxPooling2D(pool_size=(2,2), strides=(2,2), padding='valid'))
+# model.add(MaxPooling2D(pool_size=(2,2), strides=(2,2), padding='valid'))
 # Batch Normalisation
-model.add(BatchNormalization())
+# model.add(BatchNormalization())
 
 # Passing it to a dense layer
 model.add(Flatten(name='flatten_1'))
