@@ -1,0 +1,144 @@
+import keras
+from keras import layers
+import numpy as np
+import os
+import sys
+import numpy as np
+import pandas as pd
+from keras.applications.vgg19 import preprocess_input
+from scipy import misc
+
+latent_dim = 96
+height = 96
+width = 96
+channels = 3
+half=int(height/2)
+generator_input = keras.Input(shape=(latent_dim,))
+x = layers.Dense(128 * half * half)(generator_input)
+x = layers.LeakyReLU()(x)
+x = layers.Reshape((half, half, 128))(x)
+x = layers.Conv2D(256, 5, padding='same')(x)
+x = layers.LeakyReLU()(x)
+x = layers.Conv2DTranspose(256, 4, strides=2, padding='same')(x)
+x = layers.LeakyReLU()(x)
+x = layers.Conv2D(256, 5, padding='same')(x)
+x = layers.LeakyReLU()(x)
+x = layers.Conv2D(256, 5, padding='same')(x)
+x = layers.LeakyReLU()(x)
+x = layers.Conv2D(channels, 7, activation='tanh', padding='same')(x)
+generator = keras.models.Model(generator_input, x)
+generator.summary()
+
+discriminator_input = layers.Input(shape=(height, width, channels))
+x = layers.Conv2D(128, 3)(discriminator_input)
+x = layers.LeakyReLU()(x)
+x = layers.Conv2D(128, 4, strides=2)(x)
+x = layers.LeakyReLU()(x)
+x = layers.Conv2D(128, 4, strides=2)(x)
+x = layers.LeakyReLU()(x)
+x = layers.Conv2D(128, 4, strides=2)(x)
+x = layers.LeakyReLU()(x)
+x = layers.Flatten()(x)
+x = layers.Dropout(0.25)(x)
+x = layers.Dense(1, activation='sigmoid')(x)
+discriminator = keras.models.Model(discriminator_input, x)
+discriminator.summary()
+discriminator_optimizer = keras.optimizers.RMSprop(
+    lr=0.0002,
+    clipvalue=1.0,
+    decay=1e-8)
+discriminator.compile(optimizer=discriminator_optimizer, loss='binary_crossentropy')
+
+discriminator.trainable = False
+gan_input = keras.Input(shape=(latent_dim,))
+gan_output = discriminator(generator(gan_input))
+gan = keras.models.Model(gan_input, gan_output)
+gan_optimizer = keras.optimizers.RMSprop(lr=0.0004, clipvalue=1.0, decay=1e-8)
+gan.compile(optimizer=gan_optimizer, loss='binary_crossentropy')
+
+import os
+from keras.preprocessing import image
+
+#(x_train, y_train), (_, _) = keras.datasets.cifar10.load_data()
+x_train = np.load("D:/Amaury/Ian/GAN/train3.npy")
+#x_train = x_train[y_train.flatten() == 6]
+x_train = x_train.reshape((x_train.shape[0],) + (height, width, channels)).astype('float32') / 255.
+iterations = 10000
+batch_size = 20
+save_dir = 'D:/Amaury/Ian/GAN'
+start = 0
+for step in range(iterations):
+    random_latent_vectors = np.random.normal(size=(batch_size, latent_dim))
+    generated_images = generator.predict(random_latent_vectors)
+    stop = start + batch_size
+    real_images = x_train[start: stop]
+    combined_images = np.concatenate([generated_images, real_images])
+    labels = np.concatenate([np.ones((batch_size, 1)),
+                             np.zeros((batch_size, 1))])
+    labels += 0.05 * np.random.random(labels.shape)
+    d_loss = discriminator.train_on_batch(combined_images, labels)
+    random_latent_vectors = np.random.normal(size=(batch_size, latent_dim))
+    misleading_targets = np.zeros((batch_size, 1))
+    a_loss = gan.train_on_batch(random_latent_vectors,
+                                misleading_targets)
+    start += batch_size
+    if start > len(x_train) - batch_size:
+        start = 0
+    if step % 100 == 0:
+        gan.save_weights('D:/Amaury/Ian/GAN/gan.h5')
+        print('discriminator loss:', d_loss)
+        print('adversarial loss:', a_loss)
+        img = image.array_to_img(generated_images[0] * 255., scale=False)
+        img.save(os.path.join(save_dir, 'generated_building' + str(step) + '.png'))
+        img = image.array_to_img(real_images[0] * 255., scale=False)
+        img.save(os.path.join(save_dir, 'real_building' + str(step) + '.png'))
+
+###dataprep#########
+train_list_path = 'D:/Amaury/Ian/GAN/retrain.txt'
+all_results = np.loadtxt(train_list_path, str)
+id_shuffle = np.arange(all_results.shape[0])
+np.random.shuffle(id_shuffle)
+all_results = all_results[id_shuffle.flatten().tolist(), :]
+valid_results,train_results  = all_results[:5000, ], all_results[5000:, ]
+duelsDF = pd.DataFrame(train_results, None, ['left_id', 'right_id', 'winner'])
+mask_yes = duelsDF['winner'] == '1'
+yes = duelsDF[mask_yes]
+mask_no = duelsDF['winner'] == '0'
+no = duelsDF[mask_no]
+
+X_valid = []
+y_valid = []
+
+# If image adjustments are made then reload = True so that the same adjustments are made here
+# as in the datagen_class_aug_test class, e.g., preprocessing of imagenet data.
+cnt = 0
+for row in valid_results:
+
+
+    if (row[2] == '0') | (row[2] == '1'):
+        # print(row)
+        # The label is the last value of the row
+        y_valid.append(int(row[-1]))
+        path_1 = row[0]
+        #path_2 = row[1]
+        # Read the images and resize them, cropping bottom logo out, applying preprocessing
+        img_1 = misc.imread(path_1)[:610, :]
+        #img_2 = misc.imread(path_2)[:610, :]
+        img_1 = misc.imresize(img_1, (height, width))
+        #img_2 = misc.imresize(img_2, (height, width))
+        # img_1 = preprocess_input(x=np.expand_dims(img_1.astype(float), axis=0))[0]
+        # img_2 = preprocess_input(x=np.expand_dims(img_2.astype(float), axis=0))[0]
+        X_valid.append(img_1)
+    cnt += 1
+X_valid = np.array(X_valid)
+y_valid = np.array(y_valid)
+valid_id_shuffle = np.arange(y_valid.shape[0])
+np.random.shuffle(valid_id_shuffle)
+mid_p = len(valid_id_shuffle) // 2
+
+#np.save(training_results_save, train_results)
+# np.save(self.validation_results_save, valid_results)
+np.save("D:/Amaury/Ian/GAN/train3.npy", X_valid[:5000, :])
+# np.save(self.y_valid_fname, y_valid[:mid_p])
+# np.save(self.x_test_fname, X_valid[mid_p:, :])
+# np.save(self.y_test_fname, y_valid[mid_p:])
